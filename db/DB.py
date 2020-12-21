@@ -1,79 +1,39 @@
 import sqlite3
 from time import gmtime, strftime
-from random import randint
 
-global db
-global sql
+with sqlite3.connect('server.db') as db:
+    sql = db.cursor()
 
-db = sqlite3.connect('server')
-sql = db.cursor()
+    # Создание таблицы users
+    sql.execute("""CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        login TEXT,
+        password TEXT,
+        time TEXT
+        )""")
 
-sql.execute("""CREATE TABLE IF NOT EXISTS users (
-    time TEXT,
-    login TEXT,
-    password TEXT,
-    cash BIGINT
-)""")
-
-db.commit()
-
-
-def regist():
-    create_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
-    user_login = input('Login: ')
-    user_password = input('Password: ')
-
-    sql.execute("SELECT login FROM users WHERE login = '{user_login}'")
-    if sql.fetchone() is None:
-        sql.execute(f"INSERT INTO users VALUES (?, ?, ?, ?)",
-                    (create_time, user_login, user_password, 0))
-        db.commit()
-
-        print('Запись создана.')
-    else:
-        print('Запись уже существует.')
-
-        for value in sql.execute("SELECT * FROM users"):
-            print(value)
-
-
-def delete_db():
-    sql.execute(f'DELETE FROM users WHERE login = "{user_login}"')
     db.commit()
-    print('Запись удалена!')
 
 
-def money():
-    global user_login
-    user_login = input("Log in: ")
-    number = randint(1, 2)
+class User:  # Клас User, принемает логин и пароль
+    def __init__(self, login, password):
+        self.user_login = login
+        self.user_password = password
+        self.create_time = strftime("%Y-%m-%d %H:%M:%S", gmtime())
 
-    for i in sql.execute(f'SELECT cash FROM users WHERE login = "{user_login}"'):
-        balance = i[0]
-
-    sql.execute(f'SELECT login FROM users WHERE login = "{user_login}"')
-    if sql.fetchone() is None:
-        print("Логина не существует.")
-        regist()
-    else:
-        if number == 1:
-            sql.execute(
-                f'UPDATE users SET cash = {1000 + balance} WHERE login = "{user_login}"')
+    # Метод проверяет логин на сущестование и создает запись если логин не занят
+    def check_login(self):
+        sql.execute(
+            f"SELECT login FROM users WHERE login = '{self.user_login}'")
+        if sql.fetchone() is None:
+            sql.execute(f"INSERT INTO users VALUES (?, ?, ?, ?)",
+                        (None, self.user_login, self.user_password, self.create_time))
             db.commit()
-            print("Вы выиграли!")
-            enter()
+
+            print('Запись создана.')
         else:
-            print("Вы проиграли.")
-            delete_db()
+            print("Создайте новую запись.")
 
 
-def enter():
-    for i in sql.execute('SELECT time, login, cash FROM users'):
-        print(i)
-
-
-def main():
-    money()
-
-
-main()
+x = User('Dima', 123)
+x.check_login()
